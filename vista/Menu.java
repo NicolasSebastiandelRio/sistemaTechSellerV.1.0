@@ -10,7 +10,10 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
+import controlador.PantallaConsultaControlador;
+import controlador.PantallaEstadisticasControlador;
 import controlador.PantallaIngresoControlador;
+import controlador.PantallaMasivaControlador;
 
 public class Menu extends JFrame implements ActionListener {
 	//1 declaro
@@ -81,7 +84,6 @@ public class Menu extends JFrame implements ActionListener {
 		setVisible(true);
 	}
 	
-	//implementar logica del manejador de eventos
 	@Override
 	public void actionPerformed(ActionEvent e) {//reacciona a los clics de los menus
 		
@@ -91,15 +93,21 @@ public class Menu extends JFrame implements ActionListener {
 	       PantallaIngresoControlador controlador = new PantallaIngresoControlador(pantallaIngreso);
 	        mostrarPanel(pantallaIngreso);
 		}else if(source ==itemConsultaActualizacion){
-			//usuario ingresa codigo para buscar procucto,
-			//al darle buscar, el sistema muestra toda la info en formato no editable (o msj error si no existe)
-			//luego puede elegir con 2 botones si editar o anular, si edita vuelve todos los campos editables para modifciarlos, con dos botones mas
-			//de aplicar cambios o cancelar
-			// boton anular elimina a ese registro del txt
+			//creo vista
+			PantallaConsulta vistaConsulta = new PantallaConsulta();
+			//creo controlador y le paso vista
+			new PantallaConsultaControlador(vistaConsulta);
+			//3 muestro vista en pantalla ppal
+			mostrarPanel(vistaConsulta);
+			
 		}else if(source == itemMasiva) {
-			//consulta masiva
+			PantallaMasiva vistaMasiva = new PantallaMasiva();
+			new PantallaMasivaControlador(vistaMasiva);
+			mostrarPanel(vistaMasiva);
 		} else if(source == itemEstadisticas) {
-			//aca iria la logica para mostrar pantalla de estadisticas
+			PantallaEstadisticas vistaEstadisticas = new PantallaEstadisticas();
+			new PantallaEstadisticasControlador(vistaEstadisticas);
+			mostrarPanel(vistaEstadisticas);
 		}else if (source ==  itemAcercaDe) {
 			//muestro cuadro de dialogo acerca de
 			JOptionPane.showMessageDialog(this, "Sistema techSeller\nVersion: 1.0\nProduced by Nicolas del Rio - 2025",
@@ -116,7 +124,6 @@ public class Menu extends JFrame implements ActionListener {
 	//metodo aux para cambiar de panel en ventana ppal
 	private void mostrarPanel(JPanel panel) {
 		this.setContentPane(panel);
-		
 		this.revalidate();
 		this.repaint();
 	}

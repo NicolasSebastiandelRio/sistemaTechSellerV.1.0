@@ -1,238 +1,309 @@
 package modeloDAO;
 
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Random;
 import java.util.Scanner;
-
+import javax.json.Json;
+import javax.json.stream.JsonGenerator;
 import excepciones.EntidadYaExistenteException;
 import modelo.Hardware;
 import modelo.InformacionDeStock;
 import modelo.Producto;
 import modelo.Software;
 import modelo.TipoLicencia;
+import modelo.Vendedor;
 
-public class ProductoDAO implements IProductoDAO{
-	private static final String NOMBRE_ARCHIVO = "productos.txt";
-	private static final String DELIMITADOR = ";";
-	
-	@Override
-	public void guardarProducto(Producto p) throws EntidadYaExistenteException {
-		// Validacion de existencia, antes de guardar
-		if(buscarProducto(p.getCodigoSKU()) != null) {
-			throw new EntidadYaExistenteException("Producto con SKU = "+p.getCodigoSKU()+"ya existe");
-		}
-		
-		PrintWriter pw = null;
-		try {
-			//abre arch en modo append, para agregar al final
-			pw = new PrintWriter(new FileWriter(NOMBRE_ARCHIVO,true));
-			pw.println(serializarProducto(p));
-		}catch(IOException e) {
-			System.err.println("Error al guardar producto"+e.getMessage());
-		}finally {
-			if(pw != null) {
-				pw.close();
-			}
-		}
-	}
+public class ProductoDAO implements IProductoDAO {
+    private static final String NOMBRE_ARCHIVO = "productos.txt";
+    private static final String ARCHIVO_JSON = "estadisticas.json";
+    private static final String DELIMITADOR = ";";
 
-	@Override
-	public Producto buscarProducto(String codigoSKU) {
-		Scanner scanner = null;
-		try {
-			scanner = new Scanner(new File(NOMBRE_ARCHVIVO));
-			while(scanner.hasNextLine()) {
-				String linea = scanner.nextLine();
-				Producto p = deserializarProducto(linea);
-				if(p.getCodigoSKU().equals(codigoSKU)) {
-					return p;
-				}
-			}
-		}catch(FileNotFoundException e) {
-			System.err.println("el arch no existe "+e.getMessage());
-		}finally {
-			if(scanner != null) {
-				scanner.close();
-			}
-		}
-	}
+    @Override
+    public void guardarProducto(Producto p) throws EntidadYaExistenteException {
+        if (buscarProducto(p.getCodigoSKU()) != null) {
+            throw new EntidadYaExistenteException("Producto con SKU = " + p.getCodigoSKU() + " ya existe");
+        }
+        try (PrintWriter pw = new PrintWriter(new FileWriter(NOMBRE_ARCHIVO, true))) {
+            pw.println(serializarProducto(p));
+        } catch (IOException e) {
+            System.err.println("Error al guardar producto: " + e.getMessage());
+        }
+    }
 
-	@Override
-	public void actualizarProducto(Producto p) {
-		// uso lista temporal para guardar prods, para posteriormente reescribir el archivo
-		ArrayList<Producto> todosLosProductos = obtenerTodosLosProductos();
-		PrintWriter pw = null;
-		try {
-			pw = new PrintWriter(new FileWriter(NOMBRE_ARCHIVO));
-			for(Producto prod : todosLosProductos) {
-				if(prod.getCodigoSKU().equals(p.getCodigoSKU())) {
-					pw.println(serializarProducto(p));
-				}else {
-					pw.println(serializarProducto(prod));
-				}
-			}
-		}catch(IOException e) {
-			System.err.println("error al actualizar producto "+e.getMessage());
-		}finally {
-			if(pw != null) {
-				pw.close();
-			}
-		}
-		
-	}
+    @Override
+    public Producto buscarProducto(String codigoSKU) {
+        try (Scanner scanner = new Scanner(new File(NOMBRE_ARCHIVO))) {
+            while (scanner.hasNextLine()) {
+                String linea = scanner.nextLine();
+                if (linea.trim().isEmpty() || linea.startsWith("#")) continue;
+                Producto p = deserializarProducto(linea);
+                if (p != null && p.getCodigoSKU().equalsIgnoreCase(codigoSKU)) {
+                    return p;
+                }
+            }
+        } catch (FileNotFoundException e) {
+            System.err.println("Archivo no encontrado, se creará al guardar el primer producto.");
+        }
+        return null;
+    }
 
-	@Override
-	public void eliminarProducto(String codigoSKU) {
-        // Similar a actualizar, pero simplemente no se escribe la línea del producto a eliminar		
-		ArrayList<Producto> todosLosProductos = obtenerTodosLosProductos();
-		PrintWriter pw = null;
-		try {
-			pw = new PrintWriter (new FileWriter (NOMBRE_ARCHIVO));
-			for(Producto prod : todosLosProductos) {
-				if(!prod.getCodigoSKU().equals(codigoSKU)) {
-					pw.println(serializarProducto(prod));
-				}
-			}
-		}catch(IOException e) {
-			System.err.println("error al eliminar el producto"+e.getMessage());
-		}finally {
-			if(pw != null) {
-				pw.close();
-			}
-		}
-	
-	}
+    @Override
+    public void actualizarProducto(Producto p) {
+        ArrayList<Producto> todos = obtenerTodosLosProductos();
+        try (PrintWriter pw = new PrintWriter(new FileWriter(NOMBRE_ARCHIVO, false))) {
+            for (Producto prod : todos) {
+                if (prod.getCodigoSKU().equals(p.getCodigoSKU())) {
+                    pw.println(serializarProducto(p));
+                } else {
+                    pw.println(serializarProducto(prod));
+                }
+            }
+        } catch (IOException e) {
+            System.err.println("Error al actualizar producto: " + e.getMessage());
+        }
+    }
 
-	@Override
-	public ArrayList<Producto> obtenerTodosLosProductos() {
-		// leer el archivo productos.txt y reconstruir una lista de objetos.
-		ArrayList<Producto> listaProductos = new ArrayList<>();
-		Scanner scanner = null;
-		try {
-			scanner = new Scanner(new File(NOMBRE_ARCHIVO));
-			while(scanner.hasNextLine()) {
-				String linea = scanner.nextLine();
-				listaProductos.add(deserializarProducto(linea));
-			}
-		}catch(FileNotFoundException e) {
-			System.err.println("Archivo de prods no existe");
-		}finally {
-			if(scanner != null) {
-				scanner.close();
-			}
-		}
-	}
-	
-	private String serializarProducto(Producto p) {
-		StringBuilder sb = new StringBuilder();
-		//atrs de clase padre producto
-		sb.append(p.getCodigoSKU()).append(DELIMITADOR);
-		sb.append(p.getNombreProducto()).append(DELIMITADOR);
-		sb.append(p.getPrecio()).append(DELIMITADOR);
-		sb.append(p.getDescripcion()).append(DELIMITADOR);
-		//conversion de calendar a string
-		if(p.getFechaIngreso() !=null) {
-			sb.append(p.getFechaIngreso().get(Calendar.DAY_OF_MONTH)).append("/");
-			sb.append(p.getFechaIngreso().get(Calendar.MONTH)+1).append("/");
-			sb.append(p.getFechaIngreso().get(Calendar.YEAR)).append(DELIMITADOR);
-		}else {
-			sb.append("null").append(DELIMITADOR);
-		}
-        // Atributos de la clase compuesta InformacionDeStock
+    @Override
+    public void eliminarProducto(String codigoSKU) {
+        ArrayList<Producto> todos = obtenerTodosLosProductos();
+        try (PrintWriter pw = new PrintWriter(new FileWriter(NOMBRE_ARCHIVO, false))) {
+            for (Producto prod : todos) {
+                if (!prod.getCodigoSKU().equals(codigoSKU)) {
+                    pw.println(serializarProducto(prod));
+                }
+            }
+        } catch (IOException e) {
+            System.err.println("Error al eliminar el producto: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public ArrayList<Producto> obtenerTodosLosProductos() {
+        ArrayList<Producto> lista = new ArrayList<>();
+        try (Scanner scanner = new Scanner(new File(NOMBRE_ARCHIVO))) {
+            while (scanner.hasNextLine()) {
+                String linea = scanner.nextLine();
+                if (linea.trim().isEmpty() || linea.startsWith("#")) continue;
+                Producto p = deserializarProducto(linea);
+                if (p != null) {
+                    lista.add(p);
+                }
+            }
+        } catch (FileNotFoundException e) {
+            e.getLocalizedMessage();
+        }
+        return lista;
+    }
+
+    // --- MÉTODOS DE ESTADÍSTICAS ---
+
+    /**
+     * **Estadística 1:** Calcula el valor total de un atributo numérico (precio) de productos Hardware
+     * que requieran instalación y hayan sido ingresados en los últimos 6 meses.
+     */
+    @Override
+    public double calcularValorTotalHardwareReciente() {
+        double total = 0.0;
+        Calendar haceSeisMeses = Calendar.getInstance();
+        haceSeisMeses.add(Calendar.MONTH, -6);
+
+        for (Producto p : obtenerTodosLosProductos()) {
+            if (p instanceof Hardware) {
+                Hardware h = (Hardware) p;
+                if (h.isRequiereInstalacion() && h.getFechaIngreso().after(haceSeisMeses)) {
+                    total += h.getPrecio();
+                }
+            }
+        }
+        return total;
+    }
+
+    /**
+     * **Estadística 2:** Devuelve una cadena con 4 datos de los productos cuyo nombre NO contenga
+     * el criterio de búsqueda.
+     */
+    @Override
+    public String obtenerInfoProductosSinCriterio(String criterio) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format("%-10s %-30s %-10s %-15s\n", "SKU", "Nombre", "Precio", "Ubicación"));
+        sb.append("------------------------------------------------------------------\n");
+        
+        int contador = 0;
+        for (Producto p : obtenerTodosLosProductos()) {
+            if (!p.getNombreProducto().toLowerCase().contains(criterio.toLowerCase())) {
+                sb.append(String.format("%-10s %-30s %-10.2f %-15s\n", 
+                    p.getCodigoSKU(), 
+                    p.getNombreProducto(), 
+                    p.getPrecio(), 
+                    p.getIds().getUbicacionAlmacen()));
+                contador++;
+            }
+        }
+        if (contador == 0) return "No se encontraron productos que cumplan la condición.";
+        return sb.toString();
+    }
+
+    /**
+     * **Estadística 3:** Cuenta cuántos productos tienen una suma de precio + stock mínimo
+     * menor a un número generado al azar.
+     */
+    @Override
+    public String contarProductosSumaMenorAleatorio() {
+        Random rand = new Random();
+        int valorAleatorio = rand.nextInt(500) + 50; // Un número al azar entre 50 y 549
+        int contador = 0;
+
+        for (Producto p : obtenerTodosLosProductos()) {
+            if ((p.getPrecio() + p.getIds().getStockMinimo()) < valorAleatorio) {
+                contador++;
+            }
+        }
+        return "Valor aleatorio generado: " + valorAleatorio + "\n" +
+               "Cantidad de productos cuya suma (Precio + Stock Mínimo) es menor: " + contador;
+    }
+
+    
+    @Override
+    public void generarEstadisticasJSON() {
+        double valorTotal = calcularValorTotalHardwareReciente();
+        String conteoVsAleatorio = contarProductosSumaMenorAleatorio();
+
+        try (OutputStream fos = new FileOutputStream(ARCHIVO_JSON, true); // true para modo append
+        		JsonGenerator gen = Json.createGenerator(fos)) {
+            
+            Calendar hoy = Calendar.getInstance();
+            String fechaHoy = String.format("%1$tY-%1$tm-%1$td", hoy);
+
+            gen.writeStartObject(); // {
+            gen.writeStartObject(fechaHoy); // "2025-09-02": {
+                gen.write("valorTotalHardwareReciente", valorTotal);
+                gen.write("conteoVsAleatorio", conteoVsAleatorio);
+            gen.writeEnd(); // }
+            gen.writeEnd(); // }
+            gen.write("\n"); // Agrega un salto de línea para separar entradas
+
+        } catch (IOException e) {
+            System.err.println("Error al generar el archivo JSON: " + e.getMessage());
+        }
+    }
+
+
+    private String serializarProducto(Producto p) {
+        StringBuilder sb = new StringBuilder();
+        // 1. Tipo de Producto
+        if (p instanceof Hardware) {
+            sb.append("Hardware").append(DELIMITADOR);
+        } else if (p instanceof Software) {
+            sb.append("Software").append(DELIMITADOR);
+        }
+
+        // 2. Atributos de Producto
+        sb.append(p.getCodigoSKU()).append(DELIMITADOR);
+        sb.append(p.getNombreProducto()).append(DELIMITADOR);
+        sb.append(p.getPrecio()).append(DELIMITADOR);
+        sb.append(p.getDescripcion()).append(DELIMITADOR);
+        if (p.getFechaIngreso() != null) {
+            sb.append(String.format("%1$td/%1$tm/%1$tY", p.getFechaIngreso())).append(DELIMITADOR);
+        } else {
+            sb.append("null").append(DELIMITADOR);
+        }
+        
+        // 3. Atributos de InformacionDeStock
         InformacionDeStock ids = p.getIds();
         sb.append(ids.getCantidadDisponible()).append(DELIMITADOR);
         sb.append(ids.getUbicacionAlmacen()).append(DELIMITADOR);
         sb.append(ids.getStockMinimo()).append(DELIMITADOR);
-        
-        //identifico el tipo de obj para serializar los atributos correctos
-        if(p instanceof Hardware) {
-        	Hardware h = (Hardware)p;
-        	sb.append("Hardware").append(DELIMITADOR);
-        	sb.append(h.getTipoComponente()).append(DELIMITADOR);
-        	sb.append(h.getGarantiaMeses()).append(DELIMITADOR);
-        	sb.append(h.getPesoGramos()).append(DELIMITADOR);
-        	sb.append(h.isRequiereInstalacion()).append(DELIMITADOR);
-        }else if(p instanceof Software) {
-        	Software s = (Software) p;
-            sb.append("Software").append(DELIMITADOR);
+
+        // 4. Atributos específicos
+        if (p instanceof Hardware) {
+            Hardware h = (Hardware) p;
+            sb.append(h.getTipoComponente()).append(DELIMITADOR);
+            sb.append(h.getGarantiaMeses()).append(DELIMITADOR);
+            sb.append(h.getPesoGramos()).append(DELIMITADOR);
+            sb.append(h.isRequiereInstalacion()); // Último de Hardware
+        } else if (p instanceof Software) {
+            Software s = (Software) p;
             sb.append(s.getPlataformaCompatible()).append(DELIMITADOR);
             sb.append(s.getTipoLicencia().toString()).append(DELIMITADOR);
             sb.append(s.getVersion()).append(DELIMITADOR);
             sb.append(s.getTamanioDescarga()).append(DELIMITADOR);
-            sb.append(s.isRequiereDrivers()).append(DELIMITADOR);
+            sb.append(s.isRequiereDrivers()); // Último de Software
         }
         
-        return sb.toString();
-	}
-	private Producto deserializarProducto(String linea) {
-        String[] datos = linea.split(DELIMITADOR);
-        
-        // Validar si la línea tiene suficientes datos
-        if (datos.length < 9) { // Atributos mínimos para un producto
-            return null;
-        }
-
-        // Deserializar los atributos de la clase padre Producto
-        String codigoSKU = datos[0];
-        String nombreProducto = datos[1];
-        double precio = Double.parseDouble(datos[2]);
-        String descripcion = datos[3];
-        Calendar fechaIngreso = null;
-        try {
-             // Formato de fecha dd/mm/yyyy
-            String[] fechaPartes = datos[4].split("/");
-            if (fechaPartes.length == 3) {
-                 fechaIngreso = Calendar.getInstance();
-                 fechaIngreso.set(Integer.parseInt(fechaPartes[2]), Integer.parseInt(fechaPartes[1]) - 1, Integer.parseInt(fechaPartes[0]));
+        // 5. NUEVO: Serialización de la lista de Vendedores
+        sb.append(DELIMITADOR); // Separador para la nueva "columna"
+        if (p.getVendedores() != null && !p.getVendedores().isEmpty()) {
+            for (int i = 0; i < p.getVendedores().size(); i++) {
+                sb.append(p.getVendedores().get(i).getNumLegajo());
+                if (i < p.getVendedores().size() - 1) {
+                    sb.append(","); // Separamos los legajos por coma
+                }
             }
-        } catch (NumberFormatException e) {
-            System.err.println("Error en el formato de fecha de la línea: " + linea);
+        } else {
+            sb.append("N/A"); // Si no hay vendedores asignados
         }
 
-        // Deserializar los atributos de la clase compuesta InformacionDeStock
-        int cantidadDisponible = Integer.parseInt(datos[5]);
-        String ubicacionAlmacen = datos[6];
-        int stockMinimo = Integer.parseInt(datos[7]);
+        return sb.toString();
+    }
+
+    private Producto deserializarProducto(String linea) {
+        String[] datos = linea.split(DELIMITADOR);
+        Producto producto = null;
+
+        String tipoProducto = datos[0];
+        String codigoSKU = datos[1];
+        String nombreProducto = datos[2];
+        double precio = Double.parseDouble(datos[3]);
+        String descripcion = datos[4];
+        Calendar fechaIngreso = null;
+        if (!datos[5].equals("null")) {
+            String[] fechaPartes = datos[5].split("/");
+            if (fechaPartes.length == 3) {
+                fechaIngreso = Calendar.getInstance();
+                fechaIngreso.set(Integer.parseInt(fechaPartes[2]), Integer.parseInt(fechaPartes[1]) - 1, Integer.parseInt(fechaPartes[0]));
+            }
+        }
+        int cantidadDisponible = Integer.parseInt(datos[6]);
+        String ubicacionAlmacen = datos[7];
+        int stockMinimo = Integer.parseInt(datos[8]);
         InformacionDeStock ids = new InformacionDeStock(cantidadDisponible, ubicacionAlmacen, stockMinimo);
-        
-        // El tipo de producto es el dato[8]
-        String tipoProducto = datos[8];
-        
-        // Deserializar los atributos de las clases hijas
+
         if ("Hardware".equals(tipoProducto)) {
-            // Se asegura de que la línea tiene los datos de Hardware
-            if (datos.length < 13) return null;
             String tipoComponente = datos[9];
             int garantiaMeses = Integer.parseInt(datos[10]);
             double pesoGramos = Double.parseDouble(datos[11]);
             boolean requiereInstalacion = Boolean.parseBoolean(datos[12]);
-            return new Hardware(codigoSKU, nombreProducto, precio, descripcion, fechaIngreso, ids, 
-                                tipoComponente, garantiaMeses, pesoGramos, requiereInstalacion);
+            producto = new Hardware(codigoSKU, nombreProducto, precio, descripcion, fechaIngreso, ids, tipoComponente, garantiaMeses, pesoGramos, requiereInstalacion);
         } else if ("Software".equals(tipoProducto)) {
-            // Se asegura de que la línea tiene los datos de Software
-            if (datos.length < 14) return null;
             String plataformaCompatible = datos[9];
             TipoLicencia tipoLicencia = TipoLicencia.valueOf(datos[10]);
             String version = datos[11];
             long tamanioDescarga = Long.parseLong(datos[12]);
             boolean requiereDrivers = Boolean.parseBoolean(datos[13]);
-            return new Software(codigoSKU, nombreProducto, precio, descripcion, fechaIngreso, ids,
-                                plataformaCompatible, tipoLicencia, version, tamanioDescarga, requiereDrivers);
+            producto = new Software(codigoSKU, nombreProducto, precio, descripcion, fechaIngreso, ids, plataformaCompatible, tipoLicencia, version, tamanioDescarga, requiereDrivers);
         }
-        
-        return null; // En caso de que el tipo de producto no sea reconocido
-    }
-	
-	
-	
-	@Override
-	public void generarEstadisticasJSON() {
-		// TODO Auto-generated method stub
-		
-	}
 
+        // NUEVO: Deserialización de la lista de Vendedores
+        if (producto != null) {
+            int indiceVendedores = ("Hardware".equals(tipoProducto)) ? 13 : 14;
+            if (datos.length > indiceVendedores && !datos[indiceVendedores].equals("N/A")) {
+                String[] legajos = datos[indiceVendedores].split(",");
+                for (String legajoStr : legajos) {
+                    Vendedor v = new Vendedor();
+                    v.setNumLegajo(Integer.parseInt(legajoStr.trim()));
+                    producto.getVendedores().add(v);
+                }
+            }
+        }
+
+        return producto;
+    }
 }

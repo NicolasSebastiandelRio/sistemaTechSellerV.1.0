@@ -1,14 +1,13 @@
 package vista;
 import modeloDAO.*;
+import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
 import java.util.ArrayList;
 
+import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
+import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
@@ -22,467 +21,243 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 
-import controlador.PantallaIngresoControlador;
-import excepciones.EntidadYaExistenteException;
-import modelo.InformacionDeStock;
+public class PantallaIngreso extends JPanel {
 
-public class PantallaIngreso extends JPanel{
-	
-	//Componentes de la pantalla
-	private JLabel lblTituloVentana; //titulo para la ventana
-	private JTextArea txtLeyenda;//leyenda o comentario extenso no editable
-	
-	
-	//Componentes de la entidad producto
-	private JLabel lblCodigoSKU ;
-	private JTextField txtCodigoSKU;
-	
-	private JLabel lblNombreProducto;
-	private JTextField txtNombreProducto;
-	
-	private JLabel lblPrecio;
-	private JTextField txtPrecio;
-	
-	private JLabel lblDescripcion;
-	private JTextField txtDescripcion;
-	
-	private JComboBox <String> cmbListasDesplegable1;//lista desplegable 1
-	private JComboBox <String> cmbListasDesplegable2;//lista desplegable 2 dependiente
-	
-	//fecha es la del sistema
-	
-	//InformacionDeStock
-	private JLabel lblCantidadDisponible;
-	private JTextField txtCantidadDisponible;
-	
-	private JLabel lblUbicacionAlmacen;
-	private JTextField txtUbicacionAlmacen;
-	
-	private JLabel lblStockMinimo;
-	private JTextField txtStockMinimo;
-	
-	//Componentes para las clases derivadas (Hardware y software)
-	private JPanel panelDerivadas;//para alternar entre campos de hardware y software
-	private JRadioButton rdbHardware;
-	private JRadioButton rdbSoftware;
-	private ButtonGroup grupoDerivadas;
-	
-	private JPanel panelHardware,panelSoftware;//paneles para organizar 
-	
-	//componentes de hardware
-	private JLabel lblTipoComponente;
-	private JComboBox <String> cmbTipoComponente;//lista desplegable uno
-	private JLabel lblGarantia;
-	private JTextField txtGarantiaMeses;
-	private JLabel lblPesoEnGramos;
-	private JTextField txtPesoEnGramos;
-	private JCheckBox chkRequiereInstalacion;
-	
-	//componentes de software
-	private JLabel lblPlataforma;
-	private JComboBox <String> cmbPlataforma;//lista desplegable dos dependiente
-	private JLabel lblVersion;
-	private JTextField txtVersion;
-	private JLabel lblTamanioDescarga; 
-    private JTextField txtTamanioDescarga; 
-	private JCheckBox chkRequiereDrivers;
-	private JList <String> listaLicenciaEstatica;
-	private JScrollPane scrollListaLicencias;
-	
-	//listas estatica y dinamica
-	private JList <String> listaEstatica ; //lista estatica - ex Marcas
-	private JList<String> listaDinamica; //lista dinamica - ex modelos
-	private JScrollPane scrollListaEstatica;
-	private JScrollPane scrollListaDinamica;
-	
-	//casillas de verificacion genericas REVISAR
-	private JCheckBox chkOpcionActiva;
-	private JCheckBox chkOpcionB;
-	
-	
-	//paneles para los botones
-	//private JPanel panelBotonesOpciones;
-	private JPanel panelBotonesAcciones;
-	//private ButtonGroup grupoBotonesOpciones;// Para que solo se pueda seleccionar uno
-	
-	//botones de accion
-	private JButton btnAceptar;
-	private JButton btnCancelar;
-	
-	//objeto DAO para guardar datos
-	private IProductoDAO productoDAO = new ProductoDAO(); 
-	
-	public PantallaIngreso() {
-	    // 1. Usamos GridLayout: 0 filas (se ajustan solas), 4 columnas, con espacios de 10px.
-	    setLayout(new GridLayout(0, 4, 10, 10));
+    // --- Componentes ---
+    private JTextField txtCodigoSKU, txtNombreProducto, txtPrecio, txtDescripcion;
+    private JTextField txtCantidadDisponible, txtUbicacionAlmacen, txtStockMinimo;
+    private JComboBox<String> cmbMarca, cmbModelo;
+    private JRadioButton rdbHardware, rdbSoftware;
+    private ButtonGroup grupoDerivadas;
+    private JPanel panelHardware, panelSoftware;
+    private JComboBox<String> cmbTipoComponente;
+    private JTextField txtGarantiaMeses, txtPesoEnGramos;
+    private JCheckBox chkRequiereInstalacion;
+    private JComboBox<String> cmbPlataforma;
+    private JTextField txtVersion, txtTamanioDescarga;
+    private JCheckBox chkRequiereDrivers;
+    private JList<String> listaLicenciaSoftware;
+    private JScrollPane scrollListaLicencias;
+    private JList<String> listaEstatica;
+    private JList<String> listaDinamica;
+    private DefaultListModel<String> modeloListaDinamica; // Modelo para la lista dinámica
+    private JScrollPane scrollListaEstatica, scrollListaDinamica;
+    private JCheckBox chkOpcionA, chkOpcionB;
+    private JButton btnAceptar, btnCancelar;
 
-	    // --- Inicialización de todos los componentes (sin cambios) ---
-	    lblTituloVentana = new JLabel("Pantalla de Ingreso");
-	    txtLeyenda = new JTextArea("Ingrese los datos del producto.");
-	    txtLeyenda.setEditable(false);
+    public PantallaIngreso() {
+        this.setLayout(new BorderLayout(10, 10));
 
-	    lblCodigoSKU = new JLabel("Código SKU:");
-	    txtCodigoSKU = new JTextField(10);
-	    lblNombreProducto = new JLabel("Nombre:");
-	    txtNombreProducto = new JTextField(10);
-	    lblPrecio = new JLabel("Precio:");
-	    txtPrecio = new JTextField(8);
-	    lblDescripcion = new JLabel("Descripción:");
-	    txtDescripcion = new JTextField(20);
+        // --- PANEL SUPERIOR: Datos principales del producto ---
+        JPanel panelDatosPrincipales = new JPanel(new GridLayout(0, 4, 10, 5));
+        panelDatosPrincipales.setBorder(BorderFactory.createTitledBorder("Datos del Producto"));
+        
+        txtCodigoSKU = new JTextField();
+        txtNombreProducto = new JTextField();
+        txtPrecio = new JTextField();
+        txtDescripcion = new JTextField();
+        txtCantidadDisponible = new JTextField();
+        txtUbicacionAlmacen = new JTextField();
+        txtStockMinimo = new JTextField();
+        
+        panelDatosPrincipales.add(new JLabel("Código SKU:"));
+        panelDatosPrincipales.add(txtCodigoSKU);
+        panelDatosPrincipales.add(new JLabel("Nombre:"));
+        panelDatosPrincipales.add(txtNombreProducto);
+        panelDatosPrincipales.add(new JLabel("Precio:"));
+        panelDatosPrincipales.add(txtPrecio);
+        panelDatosPrincipales.add(new JLabel("Descripción:"));
+        panelDatosPrincipales.add(txtDescripcion);
+        panelDatosPrincipales.add(new JLabel("Cantidad:"));
+        panelDatosPrincipales.add(txtCantidadDisponible);
+        panelDatosPrincipales.add(new JLabel("Stock Mínimo:"));
+        panelDatosPrincipales.add(txtStockMinimo);
+        panelDatosPrincipales.add(new JLabel("Ubicación:"));
+        panelDatosPrincipales.add(txtUbicacionAlmacen);
+        
+        this.add(panelDatosPrincipales, BorderLayout.NORTH);
 
-	    lblCantidadDisponible = new JLabel("Cantidad:");
-	    txtCantidadDisponible = new JTextField(8);
-	    lblUbicacionAlmacen = new JLabel("Ubicación:");
-	    txtUbicacionAlmacen = new JTextField(20);
-	    lblStockMinimo = new JLabel("Stock Mínimo:");
-	    txtStockMinimo = new JTextField(6);
+        // --- PANEL CENTRAL: Contendrá el resto de los campos ---
+        JPanel panelCentral = new JPanel(new GridLayout(2, 2, 10, 10)); // Grilla 2x2 para organizar
+        
+        // --- SECCIÓN TIPO DE PRODUCTO (Hardware/Software) ---
+        JPanel panelTipoProducto = new JPanel(new BorderLayout());
+        panelTipoProducto.setBorder(BorderFactory.createTitledBorder("Tipo de Producto"));
+        
+        JPanel panelRadios = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        rdbHardware = new JRadioButton("Hardware");
+        rdbSoftware = new JRadioButton("Software");
+        grupoDerivadas = new ButtonGroup();
+        grupoDerivadas.add(rdbHardware);
+        grupoDerivadas.add(rdbSoftware);
+        panelRadios.add(rdbHardware);
+        panelRadios.add(rdbSoftware);
+        
+        // --- Panel Hardware ---
+        panelHardware = new JPanel(new GridLayout(0, 2, 5, 5));
+        panelHardware.add(new JLabel("Tipo de Componente:"));
+        cmbTipoComponente = new JComboBox<>(new String[]{"Placa de video", "Procesador"});
+        panelHardware.add(cmbTipoComponente);
+        panelHardware.add(new JLabel("Garantía (meses):"));
+        txtGarantiaMeses = new JTextField();
+        panelHardware.add(txtGarantiaMeses);
+        panelHardware.add(new JLabel("Peso en gramos:"));
+        txtPesoEnGramos = new JTextField();
+        panelHardware.add(txtPesoEnGramos);
+        panelHardware.add(new JLabel("Requiere instalación:"));
+        chkRequiereInstalacion = new JCheckBox();
+        panelHardware.add(chkRequiereInstalacion);
+        
+        // --- Panel Software ---
+        panelSoftware = new JPanel(new GridLayout(0, 2, 5, 5));
+        panelSoftware.add(new JLabel("Plataforma:"));
+        cmbPlataforma = new JComboBox<>(new String[]{"Windows", "Linux"});
+        panelSoftware.add(cmbPlataforma);
+        panelSoftware.add(new JLabel("Versión:"));
+        txtVersion = new JTextField();
+        panelSoftware.add(txtVersion);
+        panelSoftware.add(new JLabel("Tamaño (MB):"));
+        txtTamanioDescarga = new JTextField();
+        panelSoftware.add(txtTamanioDescarga);
+        panelSoftware.add(new JLabel("Requiere drivers:"));
+        chkRequiereDrivers = new JCheckBox();
+        panelSoftware.add(chkRequiereDrivers);
+        panelSoftware.add(new JLabel("Licencia:"));
+        listaLicenciaSoftware = new JList<>(new String[]{"ANUAL", "PERPETUA", "GRATUITA"});
+        scrollListaLicencias = new JScrollPane(listaLicenciaSoftware);
+        panelSoftware.add(scrollListaLicencias);
+        
+        panelTipoProducto.add(panelRadios, BorderLayout.NORTH);
+        panelTipoProducto.add(panelHardware, BorderLayout.WEST);
+        panelTipoProducto.add(panelSoftware, BorderLayout.EAST);
+        panelHardware.setVisible(false);
+        panelSoftware.setVisible(false);
+        
+        panelCentral.add(panelTipoProducto);
 
-	    btnAceptar = new JButton("Aceptar");
-	    btnCancelar = new JButton("Cancelar");
-	    panelBotonesAcciones = new JPanel(); // Usará FlowLayout por defecto, perfecto para botones.
-	    panelBotonesAcciones.add(btnAceptar);
-	    panelBotonesAcciones.add(btnCancelar);
-
-	    rdbHardware = new JRadioButton("Hardware");
-	    rdbSoftware = new JRadioButton("Software");
-	    grupoDerivadas = new ButtonGroup();
-	    grupoDerivadas.add(rdbHardware);
-	    grupoDerivadas.add(rdbSoftware);
-
-	    // Panel Hardware
-	    panelHardware = new JPanel(new GridLayout(0, 2, 5, 5));
-	    panelHardware.add(new JLabel("Tipo de Componente:"));
-	    cmbTipoComponente = new JComboBox<>(new String[]{"Placa de video", "Procesador"});
-	    panelHardware.add(cmbTipoComponente);
-	    panelHardware.add(new JLabel("Garantía (meses):"));
-	    txtGarantiaMeses = new JTextField(4);
-	    panelHardware.add(txtGarantiaMeses);
-	    panelHardware.add(new JLabel("Peso en gramos:"));
-	    txtPesoEnGramos = new JTextField(6);
-	    panelHardware.add(txtPesoEnGramos);
-	    panelHardware.add(new JLabel("Requiere instalación:"));
-	    chkRequiereInstalacion = new JCheckBox();
-	    panelHardware.add(chkRequiereInstalacion);
-	    
-	    // Panel Software
-	    panelSoftware = new JPanel(new GridLayout(0, 2, 5, 5));
-	    panelSoftware.add(new JLabel("Plataforma:"));
-	    cmbPlataforma = new JComboBox<>(new String[]{"Windows", "Linux"});
-	    panelSoftware.add(cmbPlataforma);
-	    panelSoftware.add(new JLabel("Versión:"));
-	    txtVersion = new JTextField(8);
-	    panelSoftware.add(txtVersion);
-	    lblTamanioDescarga = new JLabel("Tamaño (MB):");
-	    txtTamanioDescarga = new JTextField(8);
-	    panelSoftware.add(lblTamanioDescarga);
-	    panelSoftware.add(txtTamanioDescarga);
-	    panelSoftware.add(new JLabel("Requiere drivers:"));
-	    chkRequiereDrivers = new JCheckBox();
-	    panelSoftware.add(chkRequiereDrivers);
-	    
-	    // ... otros componentes (listas, etc.)
-	    listaLicenciaEstatica = new JList<>(new String[]{"Licencia anual", "Licencia perpetua", "Licencia gratuita"});
-	    scrollListaLicencias = new JScrollPane(listaLicenciaEstatica);
-	    listaLicenciaEstatica.setVisibleRowCount(3);
-	    
-	    // ...
-	    // Inicialización de componentes que faltaban en el constructor original
-	    //cmbListasDesplegable1 = new JComboBox<>(LecturaArchsDAO.leerListaEstatica("marcas.txt").toArray(new String[0]));
-	    ArrayList<String> marcas = LecturaArchsDAO.leerArchivoDeListas("marcas.txt",1);
-	    cmbListasDesplegable1 = new JComboBox<>(marcas.toArray(new String[0]));
-	    cmbListasDesplegable2 = new JComboBox<>();
-	    chkOpcionActiva = new JCheckBox("Opción A", true);
-	    chkOpcionB = new JCheckBox("Opción B");
-
-
-	    // --- 2. Agregamos los componentes de forma ordenada a la grilla ---
-	    
-	    // Fila 1
-	    add(lblCodigoSKU);
-	    add(txtCodigoSKU);
-	    add(lblNombreProducto);
-	    add(txtNombreProducto);
-	    
-	    // Fila 2
-	    add(lblPrecio);
-	    add(txtPrecio);
-	    add(lblDescripcion);
-	    add(txtDescripcion);
-	    
-	    // Fila 3
-	    add(lblCantidadDisponible);
-	    add(txtCantidadDisponible);
-	    add(lblStockMinimo);
-	    add(txtStockMinimo);
-	    
-	    // Fila 4
-	    add(lblUbicacionAlmacen);
-	    add(txtUbicacionAlmacen);
-	    add(new JLabel("Marca:")); // Placeholder para JComboBox
-	    add(cmbListasDesplegable1);
-	    
-	    // Fila 5: Radio Buttons
-	    JPanel panelRadios = new JPanel(); // Panel auxiliar para los radios
-	    panelRadios.add(new JLabel("Tipo Producto:"));
-	    panelRadios.add(rdbHardware);
-	    panelRadios.add(rdbSoftware);
-	    add(panelRadios);
-	    
-	    add(new JLabel("Modelo:")); // Placeholder para JComboBox
-	    add(cmbListasDesplegable2);
-	    add(new JLabel("")); // Celda vacía para alinear
-	    add(new JLabel("")); // Celda vacía para alinear
-
-	    // Fila 6: Paneles específicos (Hardware/Software)
-	    add(panelHardware);
-	    add(panelSoftware);
-	    panelSoftware.setVisible(false); // Oculto por defecto
-
-	    // Fila 7: Lista de licencias y checkboxes
-	    add(new JLabel("Licencia:"));
-	    add(scrollListaLicencias);
-	    add(chkOpcionActiva);
-	    add(chkOpcionB);
-	    
-	    // Fila 8: Botones de acción
-	    add(new JLabel("")); // Celda vacía para alinear
-	    add(new JLabel("")); // Celda vacía para alinear
-	    add(new JLabel("")); // Celda vacía para alinear
-	    add(panelBotonesAcciones);
-	}
+        // --- SECCIÓN MARCA Y MODELO (Listas Desplegables) ---
+        JPanel panelMarcas = new JPanel(new GridLayout(0, 2, 10, 5));
+        panelMarcas.setBorder(BorderFactory.createTitledBorder("Marca y Modelo"));
+        
+        ArrayList<String> marcas = LecturaArchsDAO.leerArchivoDeListas("marcas.txt", 1);
+        cmbMarca = new JComboBox<>(marcas.toArray(new String[0]));
+        cmbModelo = new JComboBox<>();
+        
+        panelMarcas.add(new JLabel("Marca:"));
+        panelMarcas.add(cmbMarca);
+        panelMarcas.add(new JLabel("Modelo:"));
+        panelMarcas.add(cmbModelo);
+        
+        panelCentral.add(panelMarcas);
+        
+        // --- SECCIÓN LISTAS (Estática y Dinámica) ---
+        JPanel panelListas = new JPanel(new GridLayout(1, 2, 10, 5));
+        panelListas.setBorder(BorderFactory.createTitledBorder("Selección Múltiple"));
+        
+        // Lista Estática
+        listaEstatica = new JList<>(LecturaArchsDAO.leerListaEstatica("lista_estatica.txt").toArray(new String[0]));
+        listaEstatica.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        scrollListaEstatica = new JScrollPane(listaEstatica);
+        scrollListaEstatica.setBorder(BorderFactory.createTitledBorder("Lista Estática"));
+        
+        // Lista Dinámica (inicia vacía)
+        modeloListaDinamica = new DefaultListModel<>();
+        listaDinamica = new JList<>(modeloListaDinamica);
+        listaDinamica.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        scrollListaDinamica = new JScrollPane(listaDinamica);
+        scrollListaDinamica.setBorder(BorderFactory.createTitledBorder("Lista Dinámica"));
+        
+        panelListas.add(scrollListaEstatica);
+        panelListas.add(scrollListaDinamica);
+        
+        panelCentral.add(panelListas);
+        
+        // --- SECCIÓN OPCIONES (chks) ---
+        JPanel panelOpciones = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        panelOpciones.setBorder(BorderFactory.createTitledBorder("Opciones Adicionales"));
+        
+        chkOpcionA = new JCheckBox("Opción A", true);
+        chkOpcionB = new JCheckBox("Opción B", false);
+        
+        panelOpciones.add(chkOpcionA);
+        panelOpciones.add(chkOpcionB);
+        
+        panelCentral.add(panelOpciones);
+        
+        this.add(panelCentral, BorderLayout.CENTER);
+        
+        // --- PANEL INFERIOR: Botones de Acción ---
+        JPanel panelAcciones = new JPanel(new FlowLayout(FlowLayout.RIGHT)); // Alineados a la derecha
+        btnAceptar = new JButton("Aceptar");
+        btnCancelar = new JButton("Cancelar");
+        panelAcciones.add(btnAceptar);
+        panelAcciones.add(btnCancelar);
+        
+        this.add(panelAcciones, BorderLayout.SOUTH);
+    }
 
 	public void blanquearCampos() {
 		txtCodigoSKU.setText("");
 		txtNombreProducto.setText("");
 	    txtPrecio.setText("");
 	    txtDescripcion.setText("");
-
-	    // Campos de InformacionDeStock
 	    txtCantidadDisponible.setText("");
 	    txtUbicacionAlmacen.setText("");
 	    txtStockMinimo.setText("");
 
-	    // Componentes de Hardware
-	    cmbTipoComponente.setSelectedIndex(0); // Selecciona el primer ítem
+	    cmbTipoComponente.setSelectedIndex(0);
 	    txtGarantiaMeses.setText("");
-	    chkRequiereInstalacion.setSelected(false); // Desmarca la casilla
+        txtPesoEnGramos.setText("");
+	    chkRequiereInstalacion.setSelected(false);
 
-	    // Componentes de Software
 	    cmbPlataforma.setSelectedIndex(0);
 	    txtVersion.setText("");
+        txtTamanioDescarga.setText("");
 	    chkRequiereDrivers.setSelected(false);
+        listaLicenciaSoftware.clearSelection();
 
-	    // Listas estáticas y dinámicas
-	    listaEstatica.clearSelection(); // Desselecciona todos los ítems
-	    listaDinamica.clearSelection();
+	    listaEstatica.clearSelection();
+	    modeloListaDinamica.clear(); // Se limpia el modelo, no la lista
 	    
-	    // Casillas de verificación genéricas
-	    chkOpcionActiva.setSelected(true); // Vuelve a su estado inicial (true)
+	    chkOpcionA.setSelected(true);
 	    chkOpcionB.setSelected(false);
 	    
-	    // Botones de opción
-	    grupoDerivadas.clearSelection(); // Deselecciona los JRadioButton
+	    grupoDerivadas.clearSelection();
 
-	    // Lógica para alternar la visibilidad de los paneles de Hardware y Software,
-	    // en este caso, se pueden ocultar ambos o mostrar uno por defecto.
 	    panelHardware.setVisible(false);
 	    panelSoftware.setVisible(false);
-	    
-
-
 	}
-
 
 	public void mostrarMensaje(String mensaje) {
-		JOptionPane.showMessageDialog(this, mensaje,"info",JOptionPane.INFORMATION_MESSAGE);
+		JOptionPane.showMessageDialog(this, mensaje, "Información", JOptionPane.INFORMATION_MESSAGE);
 	}
 	
-	
-	
-public JLabel getLblTituloVentana() {
-	return lblTituloVentana;
-}
+    public JTextField getTxtCodigoSKU() { return txtCodigoSKU; }
+    public JButton getBtnAceptar() { return btnAceptar; }
+    public JButton getBtnCancelar() { return btnCancelar; }
+    public JRadioButton getRdbHardware() { return rdbHardware; }
+    public JRadioButton getRdbSoftware() { return rdbSoftware; }
+    public JPanel getPanelHardware() { return panelHardware; }
+    public JPanel getPanelSoftware() { return panelSoftware; }
+    public JComboBox<String> getCmbMarca() { return cmbMarca; }
+    public JComboBox<String> getCmbModelo() { return cmbModelo; }
+    public JTextField getTxtNombreProducto() { return txtNombreProducto; }
+    public JTextField getTxtPrecio() { return txtPrecio; }
+    public JTextField getTxtDescripcion() { return txtDescripcion; }
+    public JTextField getTxtCantidadDisponible() { return txtCantidadDisponible; }
+    public JTextField getTxtUbicacionAlmacen() { return txtUbicacionAlmacen; }
+    public JTextField getTxtStockMinimo() { return txtStockMinimo; }
+    public JComboBox<String> getCmbTipoComponente() { return cmbTipoComponente; }
+    public JTextField getTxtGarantiaMeses() { return txtGarantiaMeses; }
+    public JTextField getTxtPesoEnGramos() { return txtPesoEnGramos; }
+    public JCheckBox getChkRequiereInstalacion() { return chkRequiereInstalacion; }
+    public JComboBox<String> getCmbPlataforma() { return cmbPlataforma; }
+    public JTextField getTxtVersion() { return txtVersion; }
+    public JTextField getTxtTamanioDescarga() { return txtTamanioDescarga; }
+    public JCheckBox getChkRequiereDrivers() { return chkRequiereDrivers; }
+    public JList<String> getListaLicenciaSoftware() { return listaLicenciaSoftware; }
+    public JList<String> getListaEstatica() { return listaEstatica; }
+    public JList<String> getListaDinamica() { return listaDinamica; }
 
-public JTextArea getTxtLeyenda() {
-	return txtLeyenda;
-}
-
-public JLabel getLblCodigoSKU() {
-	return lblCodigoSKU;
-}
-
-public JTextField getTxtCodigoSKU() {
-	return txtCodigoSKU;
-}
-
-public JLabel getLblNombreProducto() {
-	return lblNombreProducto;
-}
-
-public JTextField getTxtNombreProducto() {
-	return txtNombreProducto;
-}
-
-public JLabel getLblPrecio() {
-	return lblPrecio;
-}
-
-public JTextField getTxtPrecio() {
-	return txtPrecio;
-}
-
-public JLabel getLblDescripcion() {
-	return lblDescripcion;
-}
-
-public JTextField getTxtDescripcion() {
-	return txtDescripcion;
-}
-
-public JComboBox<String> getCmbListasDesplegable1() {
-	return cmbListasDesplegable1;
-}
-
-public JComboBox<String> getCmbListasDesplegable2() {
-	return cmbListasDesplegable2;
-}
-
-public JLabel getLblCantidadDisponible() {
-	return lblCantidadDisponible;
-}
-
-public JTextField getTxtCantidadDisponible() {
-	return txtCantidadDisponible;
-}
-
-public JLabel getLblUbicacionAlmacen() {
-	return lblUbicacionAlmacen;
-}
-
-public JTextField getTxtUbicacionAlmacen() {
-	return txtUbicacionAlmacen;
-}
-
-public JLabel getLblStockMinimo() {
-	return lblStockMinimo;
-}
-
-public JTextField getTxtStockMinimo() {
-	return txtStockMinimo;
-}
-
-public JPanel getPanelDerivadas() {
-	return panelDerivadas;
-}
-
-public JRadioButton getRdbHardware() {
-	return rdbHardware;
-}
-
-public JRadioButton getRdbSoftware() {
-	return rdbSoftware;
-}
-
-public ButtonGroup getGrupoDerivadas() {
-	return grupoDerivadas;
-}
-
-public JPanel getPanelHardware() {
-	return panelHardware;
-}
-public JPanel getPanelSoftware() {
-	return panelSoftware;
-}
-public JLabel getLblTipoComponente() {
-	return lblTipoComponente;
-}
-public JComboBox<String> getCmbTipoComponente() {
-	return cmbTipoComponente;
-}
-public JLabel getLblGarantia() {
-	return lblGarantia;
-}
-
-public JTextField getTxtGarantiaMeses() {
-	return txtGarantiaMeses;
-}
-
-public JCheckBox getChkRequiereInstalacion() {
-	return chkRequiereInstalacion;
-}
-
-public JLabel getLblPlataforma() {
-	return lblPlataforma;
-}
-
-public JComboBox<String> getCmbPlataforma() {
-	return cmbPlataforma;
-}
-public JLabel getLblVersion() {
-	return lblVersion;
-}
-
-public JTextField getTxtVersion() {
-	return txtVersion;
-}
-
-public JCheckBox getChkRequiereDrivers() {
-	return chkRequiereDrivers;
-}
-public JList<String> getListaLicenciaEstatica() {
-	return listaLicenciaEstatica;
-}
-public JScrollPane getScrollListaLicencias() {
-	return scrollListaLicencias;
-}
-public JList<String> getListaEstatica() {
-	return listaEstatica;
-}
-public JList<String> getListaDinamica() {
-	return listaDinamica;
-}
-public JScrollPane getScrollListaEstatica() {
-	return scrollListaEstatica;
-}
-public JScrollPane getScrollListaDinamica() {
-	return scrollListaDinamica;
-}
-public JCheckBox getChkOpcionActiva() {
-	return chkOpcionActiva;
-}
-public JCheckBox getChkOpcionB() {
-	return chkOpcionB;
-}
-public JPanel getPanelBotonesAcciones() {
-	return panelBotonesAcciones;
-}
-public JButton getBtnAceptar() {
-	return btnAceptar;
-}
-public JButton getBtnCancelar() {
-	return btnCancelar;
-}
-
-public IProductoDAO getProductoDAO() {
-	return productoDAO;
-}
-
-public JLabel getLblPesoEnGramos() {
-	return lblPesoEnGramos;
-}
-
-public JTextField getTxtPesoEnGramos() {
-	return txtPesoEnGramos;
-}
-
-public JLabel getLblTamanioDescarga() {
-	return lblTamanioDescarga;
-}
-
-public JTextField getTxtTamanioDescarga() {
-	return txtTamanioDescarga;
-}
-
-
-
+    
 }

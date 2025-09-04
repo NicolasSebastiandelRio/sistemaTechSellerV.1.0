@@ -1,5 +1,6 @@
 package modelo;
 
+import java.util.ArrayList;
 import java.util.Calendar;
 
 public abstract class Producto {
@@ -9,9 +10,11 @@ public abstract class Producto {
 	protected String descripcion;
 	protected Calendar fechaIngreso;
 	protected InformacionDeStock ids;
+    protected ArrayList<Vendedor> vendedores; 
 	
-	
-	public Producto() {}
+	public Producto() {
+        this.vendedores = new ArrayList<>();
+	}
 
 
 	public Producto(String codigoSKU, String nombreProducto, double precio, String descripcion, Calendar fechaIngreso,
@@ -85,5 +88,11 @@ public abstract class Producto {
 		this.ids = ids;
 	}
 	
-	
+    public ArrayList<Vendedor> getVendedores() {
+        return vendedores;
+    }
+
+    public void setVendedores(ArrayList<Vendedor> vendedores) {
+        this.vendedores = vendedores;
+    }
 }

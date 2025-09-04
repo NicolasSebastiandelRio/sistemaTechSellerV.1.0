@@ -14,4 +14,8 @@ public interface IProductoDAO {
 	public ArrayList<Producto> obtenerTodosLosProductos();//Para la consulta masiva.
 	public void generarEstadisticasJSON();//Un método para generar el archivo JSON, ya que la consigna lo pide.
 	
+	
+	public double calcularValorTotalHardwareReciente();
+	public String obtenerInfoProductosSinCriterio(String criterio);
+	public String contarProductosSumaMenorAleatorio();
 }

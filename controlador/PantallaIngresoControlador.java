@@ -28,12 +28,11 @@ public class PantallaIngresoControlador implements ActionListener,ItemListener{
 		this.vista=vista;
 		this.productoDAO = new ProductoDAO();
 		
-        // **CORRECCIÓN:** Se le pasan los listeners directamente en el constructor del controlador
         this.vista.getBtnAceptar().addActionListener(this);
         this.vista.getBtnCancelar().addActionListener(this);
         this.vista.getRdbHardware().addActionListener(this);
         this.vista.getRdbSoftware().addActionListener(this);
-        this.vista.getCmbListasDesplegable1().addItemListener(this);
+        this.vista.getCmbMarca().addItemListener(this);
 		
 	}
 	
@@ -57,17 +56,16 @@ public class PantallaIngresoControlador implements ActionListener,ItemListener{
 	@Override
 	public void itemStateChanged(ItemEvent e) {
 		// logica de listas dependientes.
-		if(e.getSource() == vista.getCmbListasDesplegable1()) {
+		if(e.getSource() == vista.getCmbMarca()) {
 			if(e.getStateChange() == ItemEvent.SELECTED) {
-				String criterio = (String) vista.getCmbListasDesplegable1().getSelectedItem();
+				String criterio = (String) vista.getCmbMarca().getSelectedItem();
 				
-				 // Aquí se simularía que "criterio" es la marca del producto, y el archivo
-	            // de la segunda lista contiene los modelos asociados a esa marca.
+				
 				ArrayList<String> modelos = LecturaArchsDAO.leerListaDependiente("modelos.txt", criterio);
 				
-				vista.getCmbListasDesplegable2().removeAllItems();
+				vista.getCmbModelo().removeAllItems();
 				for(String modelo : modelos) {
-					vista.getCmbListasDesplegable2().addItem(modelo);
+					vista.getCmbModelo().addItem(modelo);
 				}
 			}
 		}
@@ -121,12 +119,11 @@ public class PantallaIngresoControlador implements ActionListener,ItemListener{
 	                		);
 	                
 	            } else if (vista.getRdbSoftware().isSelected()) {
-	                // Aquí se asume que la lista estática de licencias se lee del archivo.
 	                // Usamos una lógica de conversión para obtener el enum
 	                long tamanioDescarga = Long.parseLong(vista.getTxtTamanioDescarga().getText());
-	            	String textoLicencia = vista.getListaLicenciaEstatica().getSelectedValue();
+	            	String textoLicencia = vista.getListaEstatica().getSelectedValue();
 	                TipoLicencia tipoLicencia = TipoLicencia.valueOf(
-	                    vista.getListaLicenciaEstatica().getSelectedValue().toUpperCase().replace(" ", "_")
+	                    vista.getListaEstatica().getSelectedValue().toUpperCase().replace(" ", "_")
 	                );
 
 	                nuevoProducto = new Software(
@@ -176,7 +173,6 @@ public class PantallaIngresoControlador implements ActionListener,ItemListener{
 	        if (!vista.getTxtUbicacionAlmacen().getText().isEmpty()) count++;
 	        if (vista.getRdbHardware().isSelected() || vista.getRdbSoftware().isSelected()) count++;
 	        if (vista.getChkRequiereInstalacion().isSelected() || vista.getChkRequiereDrivers().isSelected()) count++;
-	        if (vista.getChkOpcionActiva().isSelected() || vista.getChkOpcionB().isSelected()) count++;
 	        return count;
 	    }
 	    
